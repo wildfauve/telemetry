@@ -1,0 +1,47 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    aspector (0.14.0)
+    bigdecimal (1.2.7)
+    bson (4.0.0)
+    cassandra-driver (2.1.5)
+      ione (~> 1.2)
+    coderay (1.1.0)
+    connection_pool (2.2.0)
+    digest (0.0.1)
+    ione (1.2.3)
+    json (1.8.3)
+    method_source (0.8.2)
+    mongo (2.2.0)
+      bson (~> 4.0)
+    null-logger (0.1.0)
+    poseidon (0.0.5)
+    pry (0.10.3)
+      coderay (~> 1.1.0)
+      method_source (~> 0.8.1)
+      slop (~> 3.4)
+    rake (10.4.2)
+    slop (3.6.0)
+    waterdrop (0.1.12)
+      aspector
+      bundler
+      connection_pool
+      null-logger
+      poseidon
+      rake
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  bigdecimal
+  cassandra-driver
+  digest
+  json
+  mongo
+  pry
+  rake
+  waterdrop
+
+BUNDLED WITH
+   1.10.6
