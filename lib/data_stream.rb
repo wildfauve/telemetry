@@ -2,15 +2,17 @@ class DataStream
 
   def generate(telemetry)
     stream = {}
+    binding.pry
     stream = build_headers(stream, telemetry.device_config)
     stream = add_measures(stream, telemetry.segs)
+    puts "device: #{stream[:telemetry_device_id]}, Channel: #{stream[:id]}, readings: #{stream[:measurements].inspect}}"
     KafkaAdapter.new.send(stream)
   end
 
   def build_headers(stream, device_config)
     stream.merge!({
       kind: "telemetry_measurements",
-      telemetry_device_id: device_config.id,
+      telemetry_device_id: device_config.telemetry_id,
       id: device_config.channel.id
     })
     stream

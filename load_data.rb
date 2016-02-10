@@ -6,6 +6,7 @@ require 'cassandra'
 require 'securerandom'
 require 'mongo'
 require 'celluloid'
+require 'bigdecimal'
 #require 'iso8601'
 #require 'influxdb'
 require 'waterdrop'
@@ -25,10 +26,11 @@ WaterDrop.setup do |config|
 end
 
 
+Struct.new("Measurement", :started_at, :ended_at, :value, :unit_code, :state, :day)
+
 Dir["#{Dir.pwd}/lib/*.rb"].each {|file| require file }
 
 telemetry = Blocker.new(DataStream.new)
-writer = DataStream.new
 
 Dir["data/*.csv"].each do |file|
   use_file = File.open(file)

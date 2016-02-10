@@ -18,11 +18,9 @@ class DeviceRegistry
     end
 
     def find_device(device)
-      if device.id
-        #reg_device = @reg.find {|d| d.id == device.id}
-        reg_device = find(:id, device.id)
+      if device.telemetry_id
+        reg_device = find(:telemetry_id, device.telemetry_id)
       else
-        #reg_device = @reg.find {|d| d.meta_id == device.meta_id}
         reg_device = find(:meta_id, device.meta_id)
       end
       reg_device ? update_registry(reg_device, device) : add_to_registry(device)

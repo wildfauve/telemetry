@@ -1,6 +1,6 @@
 class DeviceConfig
 
-  attr_accessor :id, :meta_channel_id, :op_code, :meta_id, :channel
+  attr_accessor :telemetry_id, :meta_channel_id, :op_code, :meta_id, :channel
 
   def initialize
     @channels = []
@@ -15,7 +15,7 @@ class DeviceConfig
   end
 
   def build(reg_device)
-    reg_device ? @id = reg_device[:id] : @id = SecureRandom.uuid
+    reg_device ? @telemetry_id = reg_device[:telemetry_id] : @telemetry_id = SecureRandom.uuid
     add_channel(reg_device)
     self
   end
@@ -33,7 +33,7 @@ class DeviceConfig
 
   def to_h
     {
-      id: @id,
+      telemetry_id: @telemetry_id,
       icp_id: @icp_id,
       meta_id: @meta_id,
       channels: @channels.map(&:to_h)
@@ -43,4 +43,5 @@ class DeviceConfig
   def update
     binding.pry
   end
+
 end
