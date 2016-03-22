@@ -8,6 +8,7 @@ class CrdtPn
   end
 
   def process(msg)
+    binding.pry
     case msg[:op]
     when :p
       @total += msg[:diff]
@@ -41,19 +42,19 @@ class Telemetry
     read = reading[:read]
     #puts "Start===>   Interval: #{@interval} Current State: #{@current_state}, Read: #{read}, State: #{state} "
     if state == :estimate
-      if [:none].include? current_state
+      if [:none].include? @current_state
         msg = update_interval(state, read)
       else
         #puts "didnt process reading"
       end
     elsif state == :update
-      if [:none, :estimate].include? current_state
+      if [:none, :estimate].include? @current_state
         msg = update_interval(state, read)
       else
         #puts "didnt process reading"
       end
     elsif state == :final
-      if ![:final].include? current_state
+      if ![:final].include? @current_state
         msg = update_interval(state, read)
       else
         #puts "didnt process reading"

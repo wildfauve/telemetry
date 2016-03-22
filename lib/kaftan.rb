@@ -143,7 +143,7 @@ module Kaftan
 
 
   def convert_set_val_to_type(type, val)
-    puts "type: #{type}, val: #{val}"
+    #puts "type: #{type}, val: #{val}"
     if type[:with]
       self.send(type[:with], val)
     else

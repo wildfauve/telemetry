@@ -4,7 +4,7 @@ class TelemetryDayModel
 CREATE TABLE telemetry_days (
   telemetry_id text,
   channel_id text,
-  days set<timestamp>,
+  days set<text>,
   PRIMARY KEY (telemetry_id, channel_id)
 );
 =end
@@ -12,7 +12,6 @@ CREATE TABLE telemetry_days (
   include Kaftan
 
   table :telemetry_days, in_keyspace: :telemetry
-
   field :telemetry_id, type: :text, key: true
   field :channel_id, type: :text, key: true
   field :days, type: :set, member: {}
@@ -28,7 +27,7 @@ CREATE TABLE telemetry_days (
 
   def update_params(tel_model)
     # TODO: strange behaviour of cassandra driver leaves UTC times as NOT UTC
-    if !self.days.to_a.map {|t| t.gmtime}.include? tel_model.day  # so if we dont already have the day
+    if !self.days.to_a.include? tel_model.day  # so if we dont already have the day
       self.days.add tel_model.day
       self.update
     end

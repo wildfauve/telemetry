@@ -9,11 +9,11 @@ class DeviceRegistry
     end
 
     def register(device)
-      build_registry if !@reg
+      init_registry if !@reg
       find_device(device)
     end
 
-    def build_registry
+    def init_registry
       @reg = $mongo
     end
 
@@ -28,12 +28,12 @@ class DeviceRegistry
 
     def find(prop, value)
       r = @reg[:devices].find(prop => value)
-      raise if r.count > 1
+      r.each {|d| puts d["meta_id"]}
+      binding.pry if r.count > 1
       r.first
     end
 
     def add_to_registry(device)
-      #@reg << device.build(device)
       result = @reg[:devices].insert_one(device.build(nil).to_h)
       binding.pry if !result.successful?
       device
@@ -41,7 +41,7 @@ class DeviceRegistry
 
     def update_registry(reg_device, device)
       device.build(reg_device)
-      result = @reg[:devices].find(id: reg_device[:id]).find_one_and_replace(device.to_h)
+      result = reg_device.replace(device.to_h)
       device
     end
 

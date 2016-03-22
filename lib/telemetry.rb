@@ -1,5 +1,7 @@
 class Telemetry
 
+  Struct.new("Measurement", :started_at, :ended_at, :value, :unit_code, :state, :day)
+
   #include Celluloid
 
   attr_accessor :segs, :device_config, :model
@@ -11,7 +13,7 @@ class Telemetry
   def write_telemetry(device_config, stream)
     @device_config = device_config
     self.per_day(create_segments(stream).collect {|m| to_measure(m)}).each {|day| find_or_update(day)}
-    @model
+    self
   end
 
   def find_or_update(day_segments)
@@ -20,7 +22,6 @@ class Telemetry
       init_params(@model, @device_config, day_segments)
       @model.insert()
     else
-      fix_utc_bollocks(@model)
       update_seg_day(@model, day_segments)
     end
   end
@@ -30,9 +31,42 @@ class Telemetry
     m.channel_id = device_config.channel.id
     m.day = segments.first[:day]
     m.measurements = segments.inject({}) { |udts, segment|
-      udts[segment[:started_at]] = Cassandra::UDT.new({started_at: segment[:started_at], ended_at: segment[:ended_at], read: segment[:value], state: "final"}); udts
+      udts[segment[:started_at]] = create_segment(segment)
+      udts
     }
   end
+
+  def create_segment(segment)
+    version_type = Cassandra::UDT.new({created_at: Time.now.utc.iso8601, read: segment[:value], op: "inc", op_value: segment[:value], state: "final" })
+    version_set = Set.new([version_type])
+    Cassandra::UDT.new({started_at: segment[:started_at], ended_at: segment[:ended_at], readings: version_set})
+  end
+
+  def update_seg_day(model, day_segments)
+    day_segments.each do |seg|
+      if model.measurements.has_key?(seg.started_at)
+        model.measurements[seg.started_at].readings.add determine_change(seg, model.measurements[seg.started_at].readings)
+      else
+        model.measurements[seg.started_at] = create_segment(seg)
+      end
+    end
+    model.update
+  end
+
+  def determine_change(seg, versions)
+    last = versions.sort {|a,b| a.created_at <=> b.created_at}.last
+    ops = op(last.read, seg.value)
+    Cassandra::UDT.new({created_at: Time.now.utc.iso8601, read: seg.value, op: ops[:op], op_value: ops[:op_value], state: "final" })
+  end
+
+  def op(version_a, version_b)
+    if version_b >= version_a
+      {op: "inc", op_value: version_b - version_a}
+    else
+      {op: "dec", op_value: version_a - version_b}
+    end
+  end
+
 
   def update_params(model, device_config, segments)
     segments.each do |seg|
@@ -46,12 +80,6 @@ class Telemetry
     end
   end
 
-  def update_seg_day(model, day_segments)
-    if !segment_same(model, day_segments)
-      update_params(model, @device_config, day_segments)
-      model.update
-    end
-  end
 
   def segment_same(model, day_segments)
     day_segments.all? do |seg|
@@ -73,8 +101,8 @@ class Telemetry
     ended_at = started_at + (60 * 30 - 1)
     {
       state: :final,
-      started_at: started_at.utc,
-      ended_at: ended_at.utc,
+      started_at: iso_utc_time(started_at),
+      ended_at: iso_utc_time(ended_at),
       digest: seg_digest(started_at, ended_at),
       use: seg[:segment_pos][:use]
     }
@@ -99,8 +127,8 @@ class Telemetry
 
   def to_measure(seg)
     m = Struct::Measurement.new
-    m.started_at = to_time(seg[:started_at])
-    m.ended_at = to_time(seg[:ended_at])
+    m.started_at = seg[:started_at]
+    m.ended_at = seg[:ended_at]
     m.value = seg[:use]
     m.day = day_from_time(m.started_at)
     m
@@ -109,10 +137,16 @@ class Telemetry
   def per_day(measures)
     days = measures.map(&:day).uniq!
     d = days.inject([]) {|i, day| i << measures.select {|d| d.day == day}; i}
+    d
   end
 
   def day_from_time(time)
-    Time.new(time.year, time.month, time.day, 0,0,0,"+00:00").utc
+    #Time.new(time.year, time.month, time.day, 0,0,0,"+00:00").utc
+    time[0..9]
+  end
+
+  def iso_utc_time(time)
+    to_time(time).utc.iso8601
   end
 
   def to_time(t)
